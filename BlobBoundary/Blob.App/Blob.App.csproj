@@ -45,6 +45,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Detectors\BaseDetector.cs" />
+    <Compile Include="Detectors\CornerBoundaryDetector.cs" />
+    <Compile Include="Detectors\DiagonalBoundaryDetector.cs" />
+    <Compile Include="Detectors\RecursiveBoundaryDetector.cs" />
+    <Compile Include="Services\Factory.cs" />
+    <Compile Include="Interfaces\IFactory.cs" />
+    <Compile Include="Services\DataPrinter.cs" />
+    <Compile Include="Interfaces\IDataPrinter.cs" />
+    <Compile Include="Providers\CachedDataProvider.cs" />
+    <Compile Include="Providers\DefaultDataProvider.cs" />
+    <Compile Include="Interfaces\IBoundaryDetector.cs" />
+    <Compile Include="Interfaces\IDataProvider.cs" />
+    <Compile Include="Models\Boundary.cs" />
+    <Compile Include="Models\Point.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
@@ -52,5 +66,6 @@
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

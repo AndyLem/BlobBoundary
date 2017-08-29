@@ -1,161 +1,73 @@
 ﻿using System;
+using Blob.App.Detectors;
+using Blob.App.Interfaces;
+using Blob.App.Models;
+using Blob.App.Providers;
+using Blob.App.Services;
+using log4net;
+using log4net.Config;
 
 namespace Blob.App
 {
     class Program
     {
-        private static bool useCache = false;
-        private static long N = 10;
-        private static long[,] a =
-        {
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 1, 1, 1, 0, 0, 0, 0, 0},
-            {0, 0, 1, 1, 1, 1, 1, 0, 0, 0},
-            {0, 0, 1, 0, 0, 0, 1, 0, 0, 0},
-            {0, 0, 1, 1, 1, 1, 1, 0, 0, 0},
-            {0, 0, 0, 0, 1, 0, 1, 0, 0, 0},
-            {0, 0, 0, 0, 1, 0, 1, 0, 0, 0},
-            {0, 0, 0, 0, 1, 1, 1, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
-        };
+        private static ILog _log = LogManager.GetLogger("Blob.App");
 
-        private static long[,] cache =
-        {
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-            {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1},
-        };
-
-        private static long left, right, top, bottom;
-        private static long reads = 0;
 
         static void Main(string[] args)
         {
-            PrintArray();
+            XmlConfigurator.Configure();
+            
 
-            left = N;
-            right = -1;
-            top = N;
-            bottom = -1;
-            long Nm1 = N - 1;
+            IFactory<IBoundaryDetector> detectorsFactory = new Factory<IBoundaryDetector>(
+                new CornerBoundaryDetector(),
+                new DiagonalBoundaryDetector(),
+                new RecursiveBoundaryDetector());
 
-            for (var i = 0; i < N; i++)
+            IDataPrinter printer = new DataPrinter();
+            int option;
+            do
             {
-                var j = Nm1 - i;
-                if (j < i) break;
-                long k;
-                bool getDiagI = Get(i, i);
-                bool getDiagJ = Get(j, j);
-                Console.WriteLine(
-                    $"LEFT: current value {left}, position {i}, searching from 0 to {Math.Min(i, left)} at row {i}");
-                for (k = 0; k < Math.Min(i, left); k++)
-                {
-                    if (Get(i, k))
-                    {
-                        Console.WriteLine($"LEFT: found at {k}");
-                        left = k;
-                        break;
-                    }
-                }
-                if (getDiagI && left > i)
-                {
-                    left = i;
-                    Console.WriteLine($"LEFT: found at diagonal {i}");
-                }
-                Console.WriteLine();
-                Console.WriteLine(
-                    $"TOP: current value {top}, position {i}, searching from 0 to {Math.Min(i, top)} at column {i}");
-                for (k = 0; k < Math.Min(i, top); k++)
-                {
-                    if (Get(k, i))
-                    {
-                        Console.WriteLine($"TOP: found at {k}");
-                        top = k;
-                        break;
-                    }
-                }
-                if (getDiagI && top > i)
-                {
-                    top = i;
-                    Console.WriteLine($"TOP: found at diagonal {i}");
-                }
-
-                Console.WriteLine();
-                Console.WriteLine(
-                    $"RIGHT: current value {right}, position {j}, searching from {Nm1} to {Math.Max(j, right)} at row {j}");
-
-                for (k = Nm1; k > Math.Max(j, right); k--)
-                {
-                    if (Get(j, k))
-                    {
-                        Console.WriteLine($"RIGHT: found at {k}");
-                        right = k;
-                        break;
-                    }
-                }
-                if (getDiagJ && right < j)
-                {
-                    right = j;
-                    Console.WriteLine($"RIGHT: found at diagonal {j}");
-                }
-                Console.WriteLine();
-                Console.WriteLine(
-                    $"BOTTOM: current value {bottom}, position {j}, searching from {Nm1} to {Math.Max(j, bottom)} at column {j}");
-                for (k = Nm1; k > Math.Max(j, bottom); k--)
-                {
-                    if (Get(k, j))
-                    {
-                        Console.WriteLine($"BOTTOM: found at {k}");
-                        bottom = k;
-                        break;
-                    }
-                }
-                if (getDiagJ && bottom < j)
-                {
-                    bottom = j;
-                    Console.WriteLine($"Bottom: found at diagonal {j}");
-                }
-                Console.WriteLine();
+                Console.WriteLine("\n1: Corner algorithm");
+                Console.WriteLine("2: Diagonal algorithm");
+                Console.WriteLine("3: Recursive algorithm");
                 Console.WriteLine("------");
-                Console.WriteLine();
-            }
-
-            Console.WriteLine($"reads: {reads}");
-            Console.WriteLine($"top: {top}");
-            Console.WriteLine($"left: {left}");
-            Console.WriteLine($"bottom: {bottom}");
-            Console.WriteLine($"right: {right}");
-
-            Console.ReadKey();
-        }
-
-        private static bool Get(long i, long j)
-        {
-            if (useCache && cache[i, j] != -1) return cache[i, j] == 1;
-            reads++;
-            var val = a[i, j];
-            cache[i, j] = val;
-            return val == 1;
-        }
-
-        private static void PrintArray()
-        {
-            for (var i = 0; i < N; i++)
-            {
-                for (var j = 0; j < N; j++)
+                Console.WriteLine("0: Quit");
+                var input = Console.ReadLine();
+                if (!int.TryParse(input, out option))
                 {
-                    Console.Write(a[i, j] == 0 ? "." : "*");
+                    option = -1;
+                    continue;
                 }
-                Console.WriteLine();
-            }
+                if (option == 0) return;
+                if (option > 3 || option < 1) continue;
+
+                var detector = detectorsFactory.Get(option - 1);
+                Console.Clear();
+
+                Console.WriteLine($"Selected algorithm is {detector.GetType()}");
+
+                IDataProvider rawData = new DefaultDataProvider();
+                IDataProvider cache = new CachedDataProvider(rawData);
+
+                var result = detector.DetectBoundary(cache);
+
+                cache.Print(printer, Console.Out);
+
+                detector.PrintAdditionalInfo(printer, Console.Out);
+
+                PrintResult(result, rawData.ReadsCount);
+
+            } while (option != 0);
+        }
+
+        private static void PrintResult(Boundary result, int readsCount)
+        {
+            Console.WriteLine($"\nCell Reads: {readsCount}");
+            Console.WriteLine($"Top: {result.Top}");
+            Console.WriteLine($"Left: {result.Left}");
+            Console.WriteLine($"Bottom: {result.Bottom}");
+            Console.WriteLine($"Right: {result.Right}");
         }
     }
 }
